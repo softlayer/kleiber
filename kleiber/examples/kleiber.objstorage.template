@@ -1,0 +1,5 @@
+username: SLUSER
+api_key: SLAPIKEY
+obj_store:
+    name: IBMOS619705-2
+    datacenter: tor01

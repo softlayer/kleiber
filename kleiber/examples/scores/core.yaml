@@ -1,0 +1,38 @@
+name: core
+
+datacenter: mon01
+
+
+mappings:
+   servertypes:
+      medium:
+         cpus: 4
+         memory: 8192
+         hourly: True
+
+resources:
+   serverinstances:
+      allinone:
+        servertype: medium
+        os_code: UBUNTU_LATEST_64
+        domain: mesos.mbgl1.domain
+        keyname: siv
+        hostname: master
+        count: 1
+
+output: 
+  template: |
+    [allinone]{%set id = 1 %}
+    {% for server in resources["serverinstances"]["allinone"]["vms"] %} 
+    {{server["primaryIpAddress"] }} myid={{ id }} {% set id = id + 1 %}{% endfor %}
+
+    [allinone:vars]
+    iszk=True
+    isfileserver=True
+
+    [core:children]
+    allinone
+
+    [core:vars]
+    location=core
+  result: core.hosts
