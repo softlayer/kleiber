@@ -691,7 +691,6 @@ def provision(clustername, containername, score, configuration,
 
 
 def validate_provision_parms_passed(scoretext, parmvalues):
-    lib.debug(scoretext)
     regex = re.compile(r'{{\s*parameters\.([a-zA-Z0-9-_]+)', re.MULTILINE)
     parmnames = re.findall(regex, scoretext)
     lib.debug(parmnames)

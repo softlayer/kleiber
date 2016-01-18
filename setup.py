@@ -21,11 +21,12 @@ setup(name='kleiber',
       license="MIT",
       packages=find_packages(),
       entry_points={
-        'console_scripts': [
-            'kleiber=kleiber:main',
-        ],
+          'console_scripts': [
+              'kleiber=kleiber:main',
+          ],
       },
       install_requires=REQUIRES,
       zip_safe=False,
       include_package_data=True,
-      )
+     )
+

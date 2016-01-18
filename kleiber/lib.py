@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+"""library functions to use in kleiber.py and provision.py
+
+"""
+
 import inspect
 
 import SoftLayer
@@ -13,19 +17,29 @@ import hashlib
 import tempfile
 import stat
 
-doDebug = 'quiet'
 
+class DebugLevel:
+    level = 'quiet'
 
-def set_debug(val):
-    global doDebug
-    doDebug = val
+    @classmethod
+    def set_level(cls, val):
+        """Set debug level to provided value
+
+        :param string val: one of quiet/progress/verbose
+        """
+
+        cls.level = val
 
 
 def debug(str):
-    global doDebug
-    if doDebug == 'quiet':
+    """Print a debug message to stderr based on current debug level
+    if quiet, no output
+    if progress, print a .
+    if verbose, print caller's filename:linenumber and str
+    """
+    if DebugLevel.level == 'quiet':
         return
-    elif doDebug == 'progress':
+    elif DebugLevel.level == 'progress':
         sys.stderr.write(".")
         sys.stderr.flush()
         return
@@ -33,10 +47,18 @@ def debug(str):
     f = inspect.currentframe().f_back
     fname = inspect.getframeinfo(f).filename
     sys.stderr.write("\033[1;31m{}:{}:\033[1;m{}\n".format(
-            fname, f.f_lineno, str))
+        fname, f.f_lineno, str))
 
 
 def save_state(sl_storage, containername, path, value):
+    """save a value in the state store
+
+    :param object sl_storage: state store definition - can point to
+            objectstorage/locally mounted filesystem
+    :param string containername: folder in store for current deployment
+    :param string path: key to save the value under, can contain '/'
+    :param string value: value to save
+    """
     if sl_storage['type'] == 'swift':
         sl_storage['client'][containername][path].create()
         sl_storage['client'][containername][path].send(str(value))
@@ -50,6 +72,8 @@ def save_state(sl_storage, containername, path, value):
 
 
 def save_state_script(sl_storage, containername, scriptname, scripttext):
+    """helper around save_state to save a full script in store.
+       scripts are stored in scripts/scriptname key"""
     sha1 = hashlib.sha1(scriptname).hexdigest()
     save_state(sl_storage, containername, "scripts/{}/name".format(sha1),
                scriptname)
@@ -58,6 +82,11 @@ def save_state_script(sl_storage, containername, scriptname, scripttext):
 
 
 def state_containers(sl_storage):
+    """ return a list of all folders in store
+
+    :param object sl_storage: backend definition of store - can point
+                to objectstore/locally mounted filesystem
+    """
     if sl_storage['type'] == 'swift':
         return [str(e.name) for e in sl_storage['client'].containers()]
     else:
@@ -69,6 +98,12 @@ def state_containers(sl_storage):
 
 
 def state_container_clean(sl_storage, containername):
+    """ Delete a folder from the state store
+
+    :param object sl_storage: backend definition of store - can point to
+            objectstore/locally mounted filesystem
+    :param string containername: folder in store to delete
+    """
     if sl_storage['type'] == 'swift':
         debug("deleting container data: {}".format(
             sl_storage['client'][containername].delete_all_objects()))
@@ -77,11 +112,12 @@ def state_container_clean(sl_storage, containername):
             sl_storage['client'][containername].delete(recursive=True)))
     else:
         debug("deleting container {}: {}".format(
-                    containername,
-                    shutil.rmtree(sl_storage['directory']+containername)))
+            containername,
+            shutil.rmtree(sl_storage['directory']+containername)))
 
 
 def state_container_create(sl_storage, containername):
+    """ create a new folder to represent a deployment"""
     if sl_storage['type'] == 'swift':
         debug(sl_storage['client'][containername].create())
     else:
@@ -89,6 +125,38 @@ def state_container_create(sl_storage, containername):
 
 
 def set_value(dictionary, names, value):
+    """ create a dictionary of dictionaries and set a value
+
+    :param dict dictionary: create in this dictionary
+    :param list names: a list of fields
+    :param string value: set this value
+
+    This function creates a dictionary of dictionaries.
+    eg: lets say its called the first time as
+    dictionary = {}
+    names = [servers,server1,id]
+    value = 1234
+
+    after the call, dictionary would be
+    {
+        servers : { server1 : { id : 1234 } }
+    }
+
+    continuing on, if its called on the same dictionary with the parameters
+    names = [servers,server1,hostname]
+    value = myserver
+
+    after the call, dictionary would be
+    {
+        servers: {
+            server1 : {
+                id : 1234,
+                hostname: myserver
+            }
+        }
+    }
+
+    """
     field = names[0]
     del names[0]  # delete the first element
 
@@ -107,10 +175,19 @@ def set_value(dictionary, names, value):
 
 
 def get_resources(sl_storage, containername):
+    """ get a multi level dictionary that represents the values in the cluster
+
+    eg: save_state(sl_storage,containername,'servers/server1/id','1234')
+    would be returned as { servers : { server1 : { id: 1234 }}}
+
+    :param object sl_storage: backend definition - can point to
+                objectstorage/locally mounted filesystem
+    :param string containername: folder in store for deployment
+    """
+
     retval = {}
     if sl_storage['type'] == 'swift':
         for x in sl_storage['client'][containername].objects():
-            name = x.name
             names = x.name.split('/')
             text = x.read()
             set_value(retval, names, text)
@@ -132,14 +209,39 @@ def get_resources(sl_storage, containername):
 
 
 def findInList_match_item(field, val):
+    """helper for findInList - checks if the 2 input strings match
+
+    :param object field: any value
+    :param object val: value to check against
+    """
     return field == val
 
 
 def findInList_match_items(field, values):
+    """ helper for findInList - checks if the input fieed occurs
+            in a list of values
+
+    :param object field: any value
+    :param list values: list of values to check in
+    """
     return field in values
 
 
 def findInList(aList, keyname, value, matchfunc=None):
+    """search for an object in a list
+
+    :param list aList: the list of dicts to search through
+    :param string keyname: match the value of this key
+    :param object value: match against this value
+    :param lambda matchfunc: by default, this will do a equals
+            comparison of dict[keyname] against value, if some
+            other comparison is needed, provide function to use
+            if matchfunc returns true, the dict is selected
+    :returns: none, if no matching object found
+              a single object, if one matching object found
+              a list, if more than one matching object found
+    """
+
     # if no user provided match func
     if not matchfunc:
         # if value is a list, look for matching any value in the list
@@ -162,6 +264,12 @@ def findInList(aList, keyname, value, matchfunc=None):
 
 
 def sl_retry(f, *args):
+    """ sometimes sl apis return wierd messages, catch them and retry the call
+        upto 3 times before failing
+
+    :param function f: sl function to call
+    :param dict args: arguments to sl call
+    """
     tries = 0
     while tries < 3:
         try:
@@ -174,8 +282,13 @@ def sl_retry(f, *args):
 
 
 def __readFd(key, fd, q):
-    # read contents of a file descriptor
-    # designed to be called in a thread. will put result on parameter q
+    """
+    read contents of a file descriptor to end and put it on a queue
+
+    :param string key: prepend each line with key
+    :param fd: file descriptor to read from - file/socket/stdout/stderr etc
+    :param queue q: put the result on this queue
+    """
 
     retstring = ""
     while True:
@@ -189,6 +302,12 @@ def __readFd(key, fd, q):
 
 
 def run_script_text(text, args):
+    """ run some code with the given arguments and return the output
+
+    :param string text: script content
+    :param list args: arguments to script
+    :returns: returncode, stdout text, stderr text
+    """
     f = tempfile.NamedTemporaryFile(delete=False)
     f.write(text)
     f.close()
@@ -199,6 +318,11 @@ def run_script_text(text, args):
 
 
 def run_command(commandAndArgArray):
+    """ run a command and return the output
+    :param list commandAndArgArray: item[0] is the command
+                item[1..] are the arguments
+    :returns: return code, stdout text, stderr text
+    """
 
     debug(commandAndArgArray)
 
@@ -223,6 +347,7 @@ def run_command(commandAndArgArray):
 
 
 def error(message):
+    """ fail after printing the given message"""
     sys.stderr.write(message)
     sys.stderr.write("\n")
 

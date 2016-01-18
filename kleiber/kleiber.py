@@ -26,7 +26,7 @@ import logging
 import os
 import traceback
 
-from lib import state_containers, findInList, set_value, set_debug, debug
+from lib import state_containers, findInList, set_value, debug, DebugLevel
 from lib import save_state, state_container_create, state_container_clean
 from lib import get_resources, run_script_text, error
 
@@ -141,9 +141,9 @@ def deletable(resources):
 def do_create(args, client, sl_storage, configuration):
 
     if args['-v']:
-        set_debug('verbose')
+        DebugLevel.set_level('verbose')
     else:
-        set_debug('progress')
+        DebugLevel.set_level('progress')
 
     containername = args['<clustername>']
     if args['<clustername>'] in clusters(sl_storage):
@@ -157,7 +157,11 @@ def do_create(args, client, sl_storage, configuration):
     if dirname == "":
         dirname = "."
     score['path'] = dirname+"/"
+
+    # setup environment for scripts in score to run properly. Change to
+    #  the score directory and add . to the path
     os.chdir(score['path'])
+    os.environ['PATH'] = ':'.join([os.environ['PATH'], './'])
 
     if 'parameters' in score:
         parmvalues = score['parameters']
@@ -215,7 +219,7 @@ def do_status(args, client, sl_storage, configuration):
 
 def do_delete(args, client, sl_storage, configuration):
     if args['-v']:
-        set_debug('verbose')
+        DebugLevel.set_level('verbose')
     containername = args['<clustername>']
     if containername in clusters(sl_storage):
         resources = get_resources(sl_storage, containername)
