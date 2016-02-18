@@ -1,0 +1,21 @@
+[dal05masters] 
+75.126.138.163 myid=1 
+
+[dal05masters:vars]
+iszk=True
+ismesosmaster=True
+ismarathon=True
+ischronos=True
+
+[dal05mesosslaves] 
+75.126.138.162
+
+[dal05mesosslaves:vars]
+ismesosslave=True
+
+[dal05:children]
+dal05masters
+dal05mesosslaves
+
+[dal05:vars]
+location=dal05

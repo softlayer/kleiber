@@ -1,0 +1,73 @@
+name: mesos
+
+datacenter: tor01
+
+mappings:
+  servertypes:
+    small:
+      cpus: 1
+      memory: 1024
+      hourly: True
+
+
+resources:
+   vlans:
+       mastersfront:
+         type: public
+       mastersback:
+         type: private
+
+   loadbalancers:
+      frontendlb:
+        connections: 250
+        ssl-offload: False
+        service-groups:
+          mesos:
+            port: 5050
+            type: http
+            method: round_robin
+            health_check: default
+            allocation%: 100
+
+   serverinstances:
+      masters:
+        servertype: small
+        script: https://raw.githubusercontent.com/realmbgl/kleiber/master/config-master.sh?token=AFUe8gMkddxjoSOvRKOGmXx7IJfcu4Sgks5V6delwA%3D%3D
+        os_code: UBUNTU_LATEST_64
+        domain: mesos.mbgl1.domain
+        keyname: siv
+        hostname: master
+        vlan:
+          - mastersfront
+          - mastersback
+        count: 1
+        autoscale:
+          minimumMemberCount: 1
+          maximumMemberCount: 5
+          policies:
+            cpuuppolicy:
+              trigger: host.cpu.percent > 80
+              duration: 300
+              action : "+1"
+            cpudownpolicy:
+              trigger: host.cpu.percent < 50
+              duration: 300
+              action: -10%
+            #cpuidlepolicy:
+            #  trigger: host.cpu.percent < 20
+            #  duration: 300
+            #  action: =1
+            #datepolicy:
+            #  trigger: time = 2015-07-30T00:00:00-00:00
+            #  action: =5
+            #cronpolicy:
+            #  trigger: cron = 0 0 ? * MON,FRI *
+            #  action: =5
+          # optional loadbalancer config
+          loadbalancer:
+            name: frontendlb.mesos
+            balance-to: 5050
+
+   dns:
+     abcd.com:
+       - serverinstances.masters

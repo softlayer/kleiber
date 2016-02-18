@@ -1,0 +1,5 @@
+username: SLUSER
+api_key: SLAPIKEY
+obj_store:
+    name: SLOS123456-1
+    datacenter: tor01

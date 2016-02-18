@@ -1,0 +1,53 @@
+name: edge
+
+datacenter: "{{ parameters.datacenter }}"
+
+resources:
+
+   serverinstances:
+      masters:
+        servertype: medium
+        os_code: UBUNTU_LATEST_64
+        domain: mesos.mbgl1.domain
+        keyname: "{{ parameters.sshkey }}"
+        hostname: master
+        count: 1
+
+      slaves:
+        servertype: medium
+        os_code: UBUNTU_LATEST_64
+        domain: mesos.mbgl1.domain
+        keyname: "{{ parameters.sshkey }}"
+        hostname: slave
+        count: 2
+mappings:
+   servertypes:
+      medium:
+         cpus: 4
+         memory: 8192
+         hourly: True
+
+output: 
+  template: |
+    [{{datacenter["name"]}}masters]{%set id = 1 %}{% for master in resources["serverinstances"]["masters"]["vms"] %} 
+    {{master["primaryIpAddress"] }} myid={{ id }} {% set id = id + 1 %}{% endfor %}
+
+    [{{datacenter["name"]}}masters:vars]
+    iszk=True
+    ismesosmaster=True
+    ismarathon=True
+    ischronos=True
+
+    [{{datacenter["name"]}}mesosslaves]{% for slave in resources["serverinstances"]["slaves"]["vms"] %} 
+    {{slave["primaryIpAddress"] }}{% endfor %}
+
+    [{{datacenter["name"]}}mesosslaves:vars]
+    ismesosslave=True
+
+    [{{datacenter["name"]}}:children]
+    {{datacenter["name"]}}masters
+    {{datacenter["name"]}}mesosslaves
+
+    [{{datacenter["name"]}}:vars]
+    location={{datacenter["name"]}}
+  result: tor.hosts
