@@ -136,14 +136,15 @@ let quorum=($CLUSTERSIZE+1)/2
 echo $quorum > /etc/mesos-master/quorum
 
 echo 
-echo ">>> mesos hostname setting" 
+echo ">>> mesos and marathon hostname setting" 
 echo $PUBLIC_IP > /etc/mesos-master/hostname
 echo $PUBLIC_IP > /etc/mesos-master/ip
+mkdir -p /etc/marathon/conf
+echo $PUBLIC_IP > /etc/marathon/conf/hostname
 
 echo 
 echo ">>> slave_public role setting" 
-echo "slave_public" > /etc/mesos-master/roles
-mkdir -p /etc/marathon/conf 
+echo "slave_public,riak" > /etc/mesos-master/roles
 echo "slave_public" > /etc/marathon/conf/mesos_role
 echo "*" > /etc/marathon/conf/default_accepted_resource_roles
 echo "600000" > /etc/marathon/conf/task_launch_confirm_timeout 

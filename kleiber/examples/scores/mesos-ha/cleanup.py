@@ -13,11 +13,6 @@ swiftkey = sys.argv[2]
 dc = sys.argv[3]
 clustername = sys.argv[4]
 
-print swiftuser
-print swiftkey
-print dc
-print clustername
-
 client = object_storage.get_client(swiftuser, swiftkey, datacenter=dc)
 
 client[clustername].delete_all_objects()

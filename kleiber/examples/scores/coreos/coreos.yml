@@ -1,0 +1,70 @@
+#*******************************************************************************
+# Copyright (c) 2016 IBM Corp.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#*******************************************************************************
+
+name: mesos
+
+parameters:
+   datacenter: sjc01
+   domain: mycoreos.io
+   keyname: my-key
+   masters: 1
+   agents: 1
+   mastermetadata: "role=master"
+   agentmetadata: "role=agent"
+   discovery: ''
+
+datacenter: "{{ parameters.datacenter }}"
+
+mappings:
+   servertypes:
+      medium:
+         cpus: 4
+         memory: 8192
+         hourly: True
+
+resources:
+   serverinstances:
+
+      masters:
+        servertype: medium
+        count: "{{ parameters.masters }}"
+        os_code: COREOS_LATEST_64
+        domain: "{{ parameters.domain }}"
+        keyname: "{{ parameters.keyname }}"
+        hostname: "{{ clustername }}-master"
+        script: master.sh
+        userdata: '
+          DISCOVERY="{{ parameters.discovery }}"
+          METADATA="{{ parameters.mastermetadata }}"
+        '
+
+      agents:
+        servertype: medium
+        count: "{{ parameters.agents }}"
+        os_code: COREOS_LATEST_64
+        domain: "{{ parameters.domain }}"
+        keyname: "{{ parameters.keyname }}"
+        hostname: "{{ clustername }}-agent"
+        script: agent.sh
+        userdata: '
+          DISCOVERY="{{ parameters.discovery }}"
+          METADATA="{{ parameters.agentmetadata }}"
+        '
+
+output:
+  template: |
+    master1: "{{ resources["serverinstances"]["masters"]["vms"][0]["primaryIpAddress"] }}"
+    agent1: "{{ resources["serverinstances"]["agents"]["vms"][0]["primaryIpAddress"] }}"

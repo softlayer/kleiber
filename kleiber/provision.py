@@ -1,4 +1,19 @@
 #!/usr/bin/python
+#*******************************************************************************
+# Copyright (c) 2016 IBM Corp.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#*******************************************************************************
 
 import SoftLayer
 import json
@@ -300,8 +315,8 @@ def deploy_group(groupname, groupdef, clustername, score, client, sl_storage,
 
     if 'script' in vs_config or 'userdata' in vs_config:
         vs_config['post_uri'] = "https://gist.githubusercontent.com/suppandi/"\
-                "92160b055d74662a1deb/raw/0f2737f427ab7a1f0287"\
-                "a4d6f9e7eff341e882c4/script.sh"
+                "92160b055d74662a1deb/raw/"\
+                "5770507d3bb0a3f05acd9a5bb2b03fe65bb00c5d/script.sh"
 
         newuserdata = ""
         if 'userdata' in vs_config:
