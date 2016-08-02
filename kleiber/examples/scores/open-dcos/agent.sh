@@ -53,7 +53,7 @@ EOF
    tee /etc/systemd/system/docker.service.d/override.conf <<-'EOF'
 [Service]
 ExecStart=
-ExecStart=/usr/bin/docker daemon --storage-driver=overlay -H fd://
+ExecStart=/usr/bin/docker daemon --storage-driver=overlay
 EOF
 
 fi

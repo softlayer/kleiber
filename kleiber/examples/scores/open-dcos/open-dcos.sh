@@ -43,6 +43,7 @@ fi
 echo ">>> read input parameters"
 source $1
 
+MASTER_PRIV_IPS="$MASTER_PRIVATE_IPS"
 IFS=' ' read -ra a <<<"$MASTER_PRIVATE_IPS"
 MASTER_PRIVATE_IPS=''
 for ip in ${a[@]}; do MASTER_PRIVATE_IPS=$MASTER_PRIVATE_IPS'- '$ip$'\n'; done
@@ -84,7 +85,6 @@ ssh_port: 22
 ssh_user: $SSH_USER
 EOF
 
-
 echo ">>> create private ssh key file"
 # replace all | with new lines
 cat > ./genconf/ssh_key <<EOF
@@ -103,6 +103,12 @@ DCOS_INSTALLER_DAEMONIZE=false ./dcos_generate_config.sh --genconf
 
 echo ">>> run --install-prereqs"
 DCOS_INSTALLER_DAEMONIZE=false ./dcos_generate_config.sh --install-prereqs
+
+echo ">>> if centos then deactivate overlayfs on agenst for now"
+if [ $(which yum) ]; then
+   IFS=' ' read -ra a <<<"$AGENT_PRIV_IPS $MASTER_PRIV_IPS"
+   for ip in ${a[@]}; do ssh -o StrictHostKeyChecking=no -i genconf/ssh_key root@$ip "sed -i -e 's/overlay.*$/overlay -H unix:\/\/\/var\/run\/docker.sock/g' /etc/systemd/system/docker.service.d/override.conf; systemctl daemon-reload ; systemctl restart docker.service" ; done
+fi
 
 echo ">>> run --preflight"
 DCOS_INSTALLER_DAEMONIZE=false ./dcos_generate_config.sh --preflight
