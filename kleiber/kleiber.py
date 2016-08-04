@@ -1,4 +1,19 @@
 #!/usr/bin/python
+#*******************************************************************************
+# Copyright (c) 2016 IBM Corp.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#*******************************************************************************
 
 """kleiber cluster director
 
@@ -224,19 +239,6 @@ def do_delete(args, client, sl_storage, configuration):
     if containername in clusters(sl_storage):
         resources = get_resources(sl_storage, containername)
 
-        score = yaml.load(resources['score'])
-        if 'cleanup-scripts' in score and 'scripts' in resources:
-            score['cleanup-scripts'] = normalize(score['cleanup-scripts'],
-                                                 score)
-            for script, args in score['cleanup-scripts'].iteritems():
-                for id, data in resources['scripts'].iteritems():
-                    if data['name'] == script:
-                        print 'executing cleanup script {}'.format(script)
-                        rc, out, err = run_script_text(data['text'], args)
-                        if rc != 0:
-                            print out
-                            print err
-
         if 'serverinstances' in resources:
             vs_manager = SoftLayer.VSManager(client)
 
@@ -269,6 +271,19 @@ def do_delete(args, client, sl_storage, configuration):
 
         delete_loadbalancers(resources, client)
         clean_dns(resources, client)
+
+        score = yaml.load(resources['score'])
+        if 'cleanup-scripts' in score and 'scripts' in resources:
+            score['cleanup-scripts'] = normalize(score['cleanup-scripts'],
+                                                 score)
+            for script, args in score['cleanup-scripts'].iteritems():
+                for id, data in resources['scripts'].iteritems():
+                    if data['name'] == script:
+                        print 'executing cleanup script {}'.format(script)
+                        rc, out, err = run_script_text(data['text'], args)
+                        if rc != 0:
+                            print out
+                            print err
 
         state_container_clean(sl_storage, containername)
     else:

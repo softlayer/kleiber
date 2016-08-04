@@ -30,6 +30,7 @@ echo $MASTER_IP
 
 echo 
 echo ">>> register dns resolver"
+apt-get -y update
 apt-get -y install python-pip
 pip install dnspython
 cat > /usr/sbin/gen_resolvconf.py <<EOF
@@ -47,7 +48,7 @@ import dns.query
 status_url = 'http://$MASTER_IP:8090/exhibitor/v1/cluster/status'
 fallback_dns = "$(cat /etc/resolv.conf  | grep nameserver | head -1 | cut -d' ' -f2)"
 resolvconf_path = "/etc/resolv.conf"
-dns_test_query = 'control.softlayer.com'
+dns_test_query = 'leader.mesos'
 dns_timeout = 5
 
 servers = []

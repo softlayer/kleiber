@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/usr/bin/python
 #*******************************************************************************
 # Copyright (c) 2016 IBM Corp.
 #
@@ -15,31 +15,25 @@
 # limitations under the License.
 #*******************************************************************************
 
-# coreos nohup workaround
-grep CoreOS /etc/os-release 2>&1 >>/dev/null
-if [ $? -eq 0 ]; then
-   if [ ! -f /tmp/firstrun ]; then
-      touch /tmp/firstrun
-      systemd-run $0
-      exit
-   fi
-   
-   cd /home/core/
-fi
+import sys
+import requests
+import time
 
-mount /dev/xvdh1 /mnt
-userdatafile=/mnt/openstack/latest/user_data
-sed -n '/SCRIPTSTARTSCRIPTSTARTSCRIPTSTART/q;p' $userdatafile > userdata
-sed '1,/SCRIPTSTARTSCRIPTSTARTSCRIPTSTART/d' $userdatafile > scriptfile
-if [ -s scriptfile ]
-then
-  chmod +x scriptfile
-  script_to_run="./scriptfile"
-else
-  rm scriptfile
-  script_to_run="coreos-cloudinit --from-file"
-fi
-umount /mnt
-$script_to_run userdata 
-echo rc=$?
-echo all done
+if not len(sys.argv) == 2:
+    usagestring = "usage: {} <masterip>"
+    print usagestring.format(sys.argv[0])
+    sys.exit(1)
+
+masterip = sys.argv[1]
+url = "http://{}/mesos".format(masterip)
+
+while True:
+    try:
+       r = requests.get(url, timeout=5)
+       print r
+       if (r.status_code == 401) or (r.status_code == 200):
+          break
+       print "{}, master not up yet".format(r.status_code)
+    except:
+       print "please wait, masters not up yet"
+    time.sleep(1)

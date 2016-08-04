@@ -1,0 +1,101 @@
+#*******************************************************************************
+# Copyright (c) 2016 IBM Corp.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#*******************************************************************************
+
+name: mesos
+
+parameters:
+   datacenter: sjc01
+   domain: mydcos.io
+   keyname: my-key
+   pkey: ""
+   masters: 1
+   agents: 1
+   os_code: COREOS_LATEST_64
+   nic_speed: 100
+   firewall: false
+
+datacenter: "{{ parameters.datacenter }}"
+
+mappings:
+   servertypes:
+      medium:
+         cpus: 4
+         memory: 8192
+         hourly: True
+
+resources:
+
+   serverinstances:
+      masters:
+        servertype: medium
+        count: "{{ parameters.masters }}"
+        os_code: "{{ parameters.os_code }}"
+        domain: "{{ parameters.domain }}"
+        keyname: "{{ parameters.keyname }}"
+        hostname: "{{ clustername }}-master"
+        script: master.sh
+        userdata: 'FIREWALL={{ parameters.firewall }}'
+        nic_speed: "{{ parameters.nic_speed }}"
+
+      agents:
+        dependson: masters
+        servertype: medium
+        count: "{{ parameters.agents }}"
+        os_code: "{{ parameters.os_code }}"
+        domain: "{{ parameters.domain }}"
+        keyname: "{{ parameters.keyname }}"
+        hostname: "{{ clustername }}-agent"
+        script: agent.sh
+        userdata: 'FIREWALL={{ parameters.firewall }}'
+        nic_speed: "{{ parameters.nic_speed }}"
+
+      bootstrap:
+        dependson: agents
+        servertype: medium
+        count: 1
+        os_code: "{{ parameters.os_code }}"
+        domain: "{{ parameters.domain }}"
+        keyname: "{{ parameters.keyname }}"
+        hostname: "{{ clustername }}-bootstrap"
+        script: open-dcos.sh
+        userdata: '
+          MASTER_PUBLIC_IP="{{ resources["serverinstances"]["masters"]["vms"][0]["primaryIpAddress"] }}"
+          MASTER_PRIVATE_IPS="{% for vms in resources["serverinstances"]["masters"]["vms"] %}
+            {{ vms["primaryBackendIpAddress"] }}
+            {%endfor%}"
+          AGENT_PRIVATE_IPS="{% for vms in resources["serverinstances"]["agents"]["vms"] %}
+            {{ vms["primaryBackendIpAddress"] }}
+            {%endfor%}"
+          SSH_KEY="{{ parameters.pkey|replace("\n","|") }}"
+        '
+        nic_speed: "{{ parameters.nic_speed }}"
+
+post-scripts:
+  "waitForUp.py":
+    - '{{ resources["serverinstances"]["masters"]["vms"][0]["primaryIpAddress"] }}'
+
+cleanup-scripts:
+  "cleanup.py":
+    - '{{ parameters.datacenter }}'
+    - '{{ clustername }}'
+
+output:
+  template: |
+    dcos: "http://{{ resources["serverinstances"]["masters"]["vms"][0]["primaryIpAddress"] }}"
+    mesos: "http://{{ resources["serverinstances"]["masters"]["vms"][0]["primaryIpAddress"] }}/mesos"
+    marathon: "http://{{ resources["serverinstances"]["masters"]["vms"][0]["primaryIpAddress"] }}/marathon"
+    exhibitor: "http://{{ resources["serverinstances"]["masters"]["vms"][0]["primaryIpAddress"] }}/exhibitor"
+    bootstrap: "{{ resources["serverinstances"]["bootstrap"]["vms"][0]["primaryIpAddress"] }}"

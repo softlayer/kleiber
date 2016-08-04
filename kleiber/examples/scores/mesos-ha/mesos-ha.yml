@@ -40,7 +40,7 @@ resources:
         domain: "{{ parameters.domain }}"
         keyname: "{{ parameters.key }}"
         hostname: "{{ clustername }}-frontendlb"
-        script: nginx.sh
+        script: nginx-ar.sh
         userdata: '
           HTTPPORTS="8090 8080 5050 8123"
           DCOS_PROXY="yes"
@@ -98,7 +98,7 @@ resources:
         '
 
 post-scripts:
-  "waitForUp.py":
+  "waitForUp-ar.py":
     - '{{ resources["serverinstances"]["frontendlb"]["vms"][0]["primaryIpAddress"] }}'
     - '{{ resources["serverinstances"]["privateslaves"]["count"] }}'
     - '{{ resources["serverinstances"]["publicslaves"]["count"] }}'
@@ -112,5 +112,7 @@ cleanup-scripts:
 
 output:
   template: |
-    mesos: "http://{{ resources["serverinstances"]["frontendlb"]["vms"][0]["primaryIpAddress"] }}:5050"
-    marathon: "http://{{ resources["serverinstances"]["frontendlb"]["vms"][0]["primaryIpAddress"] }}:8080"
+    dcos_url: "http://{{ resources["serverinstances"]["frontendlb"]["vms"][0]["primaryIpAddress"] }}"
+    mesos: "http://{{ resources["serverinstances"]["frontendlb"]["vms"][0]["primaryIpAddress"] }}/mesos"
+    marathon: "http://{{ resources["serverinstances"]["frontendlb"]["vms"][0]["primaryIpAddress"] }}/marathon"
+    exhibitor: "http://{{ resources["serverinstances"]["frontendlb"]["vms"][0]["primaryIpAddress"] }}/exhibitor"

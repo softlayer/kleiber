@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/usr/bin/python
 #*******************************************************************************
 # Copyright (c) 2016 IBM Corp.
 #
@@ -15,31 +15,3 @@
 # limitations under the License.
 #*******************************************************************************
 
-# coreos nohup workaround
-grep CoreOS /etc/os-release 2>&1 >>/dev/null
-if [ $? -eq 0 ]; then
-   if [ ! -f /tmp/firstrun ]; then
-      touch /tmp/firstrun
-      systemd-run $0
-      exit
-   fi
-   
-   cd /home/core/
-fi
-
-mount /dev/xvdh1 /mnt
-userdatafile=/mnt/openstack/latest/user_data
-sed -n '/SCRIPTSTARTSCRIPTSTARTSCRIPTSTART/q;p' $userdatafile > userdata
-sed '1,/SCRIPTSTARTSCRIPTSTARTSCRIPTSTART/d' $userdatafile > scriptfile
-if [ -s scriptfile ]
-then
-  chmod +x scriptfile
-  script_to_run="./scriptfile"
-else
-  rm scriptfile
-  script_to_run="coreos-cloudinit --from-file"
-fi
-umount /mnt
-$script_to_run userdata 
-echo rc=$?
-echo all done

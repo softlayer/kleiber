@@ -8,18 +8,33 @@ Simple cluster director for SoftLayer
 * vlans
 
 ## install & configure
-* Clone this repository.
-* Install - `sudo python setup.py install`
-* Copy one of `kleiber/examples/kleiber.*.template` to `~/.kleiber` and enter your credentials.
-
+Clone this repository.
+```
+git clone ...
 ```
 
+Change to the kleiber directory and install kleiber using the following commands.
+```
+cd <kleiber_home>
+python setup.py install
+```
+
+Create the file `~/.kleiber` and add your SoftLayer credentials to it as shown in the following.
+```
 username: SLUSER                                                  
 api_key: SLAPIKEY
-# where to store kleiber management data
+```
+Metadata about the clusters you create gets store locally in the folder `~/.kleiber-data`
+
+If you want the cluster metadata to be stored at a different location or in object store, then you have to add
+one of the following in addition to the `~/.kleiber` file.
+```
+...
+local_store: <folder-path>
+# or
 obj_store:
-    name: IBMOS619705-2
-    datacenter: tor01
+    name: <obj-store-name>
+    datacenter: <dc>
 ```
 
 ## kleiber cli
@@ -43,18 +58,24 @@ Options:
   --version     Show version.
 ```
 
-sample score.yaml files are in the [scores](kleiber/examples/scores) directory
+## score samples
+Score samples can be found in the [scores](kleiber/examples/scores) directory.
+
+* [open-dcos](kleiber/examples/scores/open-dcos)
+* [coreos](kleiber/examples/scores/coreos)
+* ...
+
 
 ## score file format
 
-look at [detailed.yaml](kleiber/examples/scores/detailed.yaml) for full input options and configuration options for individual resources
+Look at [detailed.yaml](kleiber/examples/scores/detailed.yaml) for full input and configuration options for individual resources.
 * everything except `name` and `parameters` in the score files can be jinja 
-templates to fill in values from other data. look at [mesos-ha.yml](scores/mesos-ha/mesos-ha.yml) for an example
-* the optional dependson field in a resource provides ordering of the resources. otherwise resources are deployed in an 
+templates to fill in values from other data. Look at [open-dcos.yml](kleiber/examples/scores/open-dcos/open-dcos.yml) for an example
+* the optional dependson field in a resource provides ordering of the resources. Otherwise resources are deployed in an 
 order automatically selected by the director
 
 ```
-# a name to define the cluster
+# a name describing the cluster
 name: myweb-topology
 
 # a set of parameters with default values. These can be overridden by 
@@ -85,19 +106,3 @@ output:
     # the output is printed on screen
     result: output file to generate from template
 ```
-
-## samples
-create a multi master mesos cluster
-```
-
-# kleiber create kleiber/examples/scores/mesos-ha/mesos-ha.yml inst1 datacenter=mon01 
-...
-# kleiber create kleiber/examples/scores/mesos/mesos.yml inst2 key=mysshkeyname domain=demo.com
-...
-```
-
-list existing clusters
-```
-
-# kleiber list
-['mesos:inst1', 'mesos:inst2']
