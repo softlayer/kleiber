@@ -1,3 +1,0 @@
-to compile openresty with tcp support
-
-./configure --with-stream --with-stream_ssl_module
