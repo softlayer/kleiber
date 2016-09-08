@@ -55,7 +55,10 @@ EOF
 ExecStart=
 ExecStart=/usr/bin/docker daemon --storage-driver=overlay
 EOF
-
+else #coreos
+   echo ">>> coreos disabling resolved"
+   systemctl stop systemd-resolved
+   systemctl disable systemd-resolved
 fi
 
 
