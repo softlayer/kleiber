@@ -47,7 +47,7 @@ resources:
         keyname: "{{ parameters.keyname }}"
         hostname: "{{ clustername }}-master"
         script: master.sh
-        userdata: 'FIREWALL={{ parameters.firewall }}'
+        userdata: 'FIREWALL={{ parameters.firewall | lower }}'
         nic_speed: "{{ parameters.nic_speed }}"
 
       agents:
@@ -59,7 +59,7 @@ resources:
         keyname: "{{ parameters.keyname }}"
         hostname: "{{ clustername }}-agent"
         script: agent.sh
-        userdata: 'FIREWALL={{ parameters.firewall }}'
+        userdata: 'FIREWALL={{ parameters.firewall | lower }}'
         nic_speed: "{{ parameters.nic_speed }}"
 
       bootstrap:
