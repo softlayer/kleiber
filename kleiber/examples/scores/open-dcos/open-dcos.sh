@@ -53,6 +53,11 @@ IFS=' ' read -ra a <<<"$AGENT_PRIVATE_IPS"
 AGENT_PRIVATE_IPS=''
 for ip in ${a[@]}; do AGENT_PRIVATE_IPS=$AGENT_PRIVATE_IPS'- '$ip$'\n'; done
 
+PUBLIC_AGENT_PRIV_IPS="$PUBLIC_AGENT_PRIVATE_IPS"
+IFS=' ' read -ra a <<<"$PUBLIC_AGENT_PRIVATE_IPS"
+PUBLIC_AGENT_PRIVATE_IPS=''
+for ip in ${a[@]}; do PUBLIC_AGENT_PRIVATE_IPS=$PUBLIC_AGENT_PRIVATE_IPS'- '$ip$'\n'; done
+
 
 echo ">>> create genconf directory"
 mkdir -p genconf
@@ -74,6 +79,8 @@ master_list:
 $MASTER_PRIVATE_IPS
 agent_list:
 $AGENT_PRIVATE_IPS 
+public_agent_list:
+$PUBLIC_AGENT_PRIVATE_IPS
 # Use this bootstrap_url value unless you have moved the DC/OS installer assets.
 bootstrap_url: file:///opt/dcos_install_tmp
 cluster_name: dcos
@@ -136,6 +143,7 @@ RUN apt-get install -y curl
 RUN apt-get install -y vim
 RUN apt-get install -y python
 RUN apt-get install -y python-pip
+RUN apt-get install -y jq
 RUN pip install virtualenv
 RUN mkdir dcos
 WORKDIR dcos
