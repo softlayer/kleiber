@@ -84,6 +84,8 @@ $PUBLIC_AGENT_PRIVATE_IPS
 # Use this bootstrap_url value unless you have moved the DC/OS installer assets.
 bootstrap_url: file:///opt/dcos_install_tmp
 cluster_name: dcos
+exhibitor_storage_backend: static
+process_timeout: 600
 master_discovery: static
 resolvers:
 - 10.0.80.11
@@ -102,7 +104,8 @@ chmod 0600 genconf/ssh_key
 
 
 echo ">>> download dcos installer"
-curl -O -s https://downloads.dcos.io/dcos/EarlyAccess/dcos_generate_config.sh
+#curl -O -s https://downloads.dcos.io/dcos/EarlyAccess/dcos_generate_config.sh
+curl -O https://downloads.dcos.io/dcos/stable/dcos_generate_config.sh
 chmod +x dcos_generate_config.sh
 
 echo ">>> run --genconf"
@@ -147,10 +150,10 @@ RUN apt-get install -y jq
 RUN pip install virtualenv
 RUN mkdir dcos
 WORKDIR dcos
-RUN curl -O https://downloads.dcos.io/dcos-cli/install.sh
-RUN chmod +x install.sh
-RUN ./install.sh . http://$MASTER_PUBLIC_IP --add-path yes
-RUN . /dcos/bin/env-setup
+RUN curl -O https://downloads.dcos.io/binaries/cli/linux/x86-64/dcos-1.8/dcos
+RUN chmod +x dcos
+RUN mv dcos /usr/local/bin
+RUN dcos config set core.dcos_url http://$MASTER_PUBLIC_IP
 EOF
 docker build -t dcoscli dcoscli
 docker run -di --name=dcoscli dcoscli /bin/bash
