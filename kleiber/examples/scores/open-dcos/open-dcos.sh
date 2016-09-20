@@ -116,7 +116,7 @@ DCOS_INSTALLER_DAEMONIZE=false ./dcos_generate_config.sh --install-prereqs
 
 echo ">>> if centos then deactivate overlayfs on agenst for now"
 if [ $(which yum) ]; then
-   IFS=' ' read -ra a <<<"$AGENT_PRIV_IPS $MASTER_PRIV_IPS"
+   IFS=' ' read -ra a <<<"$AGENT_PRIV_IPS $PUBLIC_AGENT_PRIV_IPS $MASTER_PRIV_IPS"
    for ip in ${a[@]}; do ssh -o StrictHostKeyChecking=no -i genconf/ssh_key root@$ip "sed -i -e 's/overlay.*$/overlay -H unix:\/\/\/var\/run\/docker.sock/g' /etc/systemd/system/docker.service.d/override.conf; systemctl daemon-reload ; systemctl restart docker.service" ; done
 fi
 
@@ -132,7 +132,7 @@ DCOS_INSTALLER_DAEMONIZE=false ./dcos_generate_config.sh --postflight
 
 echo ">>> if centos then deactivate overlayfs on agenst for now"
 if [ $(which yum) ]; then
-   IFS=' ' read -ra a <<<"$AGENT_PRIV_IPS"
+   IFS=' ' read -ra a <<<"$AGENT_PRIV_IPS $PUBLIC_AGENT_PRIV_IPS"
    for ip in ${a[@]}; do ssh -o StrictHostKeyChecking=no -i genconf/ssh_key root@$ip "sed -i -e 's/overlay/devicemapper/g' /etc/systemd/system/docker.service.d/override.conf; systemctl daemon-reload ; systemctl restart docker.service" ; done
 fi
 
