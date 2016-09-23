@@ -53,6 +53,11 @@ IFS=' ' read -ra a <<<"$AGENT_PRIVATE_IPS"
 AGENT_PRIVATE_IPS=''
 for ip in ${a[@]}; do AGENT_PRIVATE_IPS=$AGENT_PRIVATE_IPS'- '$ip$'\n'; done
 
+PUBLIC_AGENT_PRIV_IPS="$PUBLIC_AGENT_PRIVATE_IPS"
+IFS=' ' read -ra a <<<"$PUBLIC_AGENT_PRIVATE_IPS"
+PUBLIC_AGENT_PRIVATE_IPS=''
+for ip in ${a[@]}; do PUBLIC_AGENT_PRIVATE_IPS=$PUBLIC_AGENT_PRIVATE_IPS'- '$ip$'\n'; done
+
 
 echo ">>> create genconf directory"
 mkdir -p genconf
@@ -74,9 +79,13 @@ master_list:
 $MASTER_PRIVATE_IPS
 agent_list:
 $AGENT_PRIVATE_IPS 
+public_agent_list:
+$PUBLIC_AGENT_PRIVATE_IPS
 # Use this bootstrap_url value unless you have moved the DC/OS installer assets.
 bootstrap_url: file:///opt/dcos_install_tmp
 cluster_name: dcos
+exhibitor_storage_backend: static
+process_timeout: 600
 master_discovery: static
 resolvers:
 - 10.0.80.11
@@ -95,7 +104,8 @@ chmod 0600 genconf/ssh_key
 
 
 echo ">>> download dcos installer"
-curl -O -s https://downloads.dcos.io/dcos/EarlyAccess/dcos_generate_config.sh
+#curl -O -s https://downloads.dcos.io/dcos/EarlyAccess/dcos_generate_config.sh
+curl -O https://downloads.dcos.io/dcos/stable/dcos_generate_config.sh
 chmod +x dcos_generate_config.sh
 
 echo ">>> run --genconf"
@@ -106,7 +116,7 @@ DCOS_INSTALLER_DAEMONIZE=false ./dcos_generate_config.sh --install-prereqs
 
 echo ">>> if centos then deactivate overlayfs on agenst for now"
 if [ $(which yum) ]; then
-   IFS=' ' read -ra a <<<"$AGENT_PRIV_IPS $MASTER_PRIV_IPS"
+   IFS=' ' read -ra a <<<"$AGENT_PRIV_IPS $PUBLIC_AGENT_PRIV_IPS $MASTER_PRIV_IPS"
    for ip in ${a[@]}; do ssh -o StrictHostKeyChecking=no -i genconf/ssh_key root@$ip "sed -i -e 's/overlay.*$/overlay -H unix:\/\/\/var\/run\/docker.sock/g' /etc/systemd/system/docker.service.d/override.conf; systemctl daemon-reload ; systemctl restart docker.service" ; done
 fi
 
@@ -122,7 +132,7 @@ DCOS_INSTALLER_DAEMONIZE=false ./dcos_generate_config.sh --postflight
 
 echo ">>> if centos then deactivate overlayfs on agenst for now"
 if [ $(which yum) ]; then
-   IFS=' ' read -ra a <<<"$AGENT_PRIV_IPS"
+   IFS=' ' read -ra a <<<"$AGENT_PRIV_IPS $PUBLIC_AGENT_PRIV_IPS"
    for ip in ${a[@]}; do ssh -o StrictHostKeyChecking=no -i genconf/ssh_key root@$ip "sed -i -e 's/overlay/devicemapper/g' /etc/systemd/system/docker.service.d/override.conf; systemctl daemon-reload ; systemctl restart docker.service" ; done
 fi
 
@@ -136,13 +146,14 @@ RUN apt-get install -y curl
 RUN apt-get install -y vim
 RUN apt-get install -y python
 RUN apt-get install -y python-pip
+RUN apt-get install -y jq
 RUN pip install virtualenv
 RUN mkdir dcos
 WORKDIR dcos
-RUN curl -O https://downloads.dcos.io/dcos-cli/install.sh
-RUN chmod +x install.sh
-RUN ./install.sh . http://$MASTER_PUBLIC_IP --add-path yes
-RUN . /dcos/bin/env-setup
+RUN curl -O https://downloads.dcos.io/binaries/cli/linux/x86-64/dcos-1.8/dcos
+RUN chmod +x dcos
+RUN mv dcos /usr/local/bin
+RUN dcos config set core.dcos_url http://$MASTER_PUBLIC_IP
 EOF
 docker build -t dcoscli dcoscli
 docker run -di --name=dcoscli dcoscli /bin/bash

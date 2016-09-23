@@ -32,6 +32,10 @@ if [ $(which yum) ]; then
    systemctl stop firewalld
    systemctl disable firewalld
 
+   yum install -y ntp ntpdate ntp-doc
+   systemctl start ntpd
+   systemctl enable ntpd
+
    tee /etc/modules-load.d/overlay.conf <<-'EOF'
 overlay
 EOF
@@ -45,7 +49,8 @@ gpgcheck=1
 gpgkey=https://yum.dockerproject.org/gpg
 EOF
 
-   yum install --assumeyes --tolerant docker-engine
+   #yum install --assumeyes --tolerant docker-engine
+   yum install -y docker-engine-1.11.2
    systemctl start docker
    systemctl enable docker
 

@@ -23,6 +23,7 @@ parameters:
    pkey: ""
    masters: 1
    agents: 1
+   public_agents: 1
    os_code: COREOS_LATEST_64
    nic_speed: 100
    firewall: false
@@ -62,8 +63,20 @@ resources:
         userdata: 'FIREWALL={{ parameters.firewall | lower }}'
         nic_speed: "{{ parameters.nic_speed }}"
 
-      bootstrap:
+      public_agents:
         dependson: agents
+        servertype: medium
+        count: "{{ parameters.public_agents }}"
+        os_code: "{{ parameters.os_code }}"
+        domain: "{{ parameters.domain }}"
+        keyname: "{{ parameters.keyname }}"
+        hostname: "{{ clustername }}-p-agent"
+        script: agent.sh
+        userdata: 'FIREWALL={{ parameters.firewall | lower }}'
+        nic_speed: "{{ parameters.nic_speed }}"
+
+      bootstrap:
+        dependson: public_agents
         servertype: medium
         count: 1
         os_code: "{{ parameters.os_code }}"
@@ -77,6 +90,9 @@ resources:
             {{ vms["primaryBackendIpAddress"] }}
             {%endfor%}"
           AGENT_PRIVATE_IPS="{% for vms in resources["serverinstances"]["agents"]["vms"] %}
+            {{ vms["primaryBackendIpAddress"] }}
+            {%endfor%}"
+          PUBLIC_AGENT_PRIVATE_IPS="{% for vms in resources["serverinstances"]["public_agents"]["vms"] %}
             {{ vms["primaryBackendIpAddress"] }}
             {%endfor%}"
           SSH_KEY="{{ parameters.pkey|replace("\n","|") }}"
