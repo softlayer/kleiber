@@ -23,7 +23,7 @@ REQUIRES = [
     'softlayer',
     'softlayer-object-storage',
     'pyyaml',
-    'jinja2'
+    'jinja2==2.8'
 ]
 
 setup(name='kleiber',

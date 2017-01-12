@@ -87,6 +87,7 @@ cluster_name: dcos
 exhibitor_storage_backend: static
 process_timeout: 600
 master_discovery: static
+oauth_enabled: 'false'
 resolvers:
 - 10.0.80.11
 - 10.0.80.12
